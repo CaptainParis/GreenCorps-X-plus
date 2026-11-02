@@ -10,7 +10,7 @@ Where X+ stands today: 15 modules in the **GreenCorps** category of the Meteor G
 - **Breeze Finder**: trial spawners and ominous vaults in loaded chunks, with one Xaero waypoint per chamber.
 - **Outpost Finder**: pillager outposts, scored by how flat the land around them is.
 - **Solid Pocket**: dense underground pockets for spawn-proof farms, with history, ESP and alerts.
-- **Sign Search (WDL)**: searches sign text and coordinates from the 2b2t.place world download.
+- **Sign Search (WDL)**: searches sign text and coordinates from the 2b2t.place world download. It needs the separate sign pack, which members can get in our Discord.
 
 **Stasis & safety**
 - **Stasis Monitor**: settled pearls per home, quotas, missing-pearl alerts, ESP and a chamber overview (`.stasis`).

@@ -37,7 +37,7 @@ Optional: [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) and [World 
 | **Breeze Finder** | Spots breeze trial spawners and ominous vaults in loaded chunks, so you find trial chambers while you fly. One Xaero waypoint per chamber. |
 | **Outpost Finder** | Finds pillager outposts and scores how flat the land around them is, which is handy for picking farm or base sites. |
 | **Solid Pocket** | Finds dense underground pockets for spawn-proof farm sites, with history, ESP, chat and sound alerts. |
-| **Sign Search (WDL)** | Searches sign text and coordinates from the 2b2t.place world download (April–June 2026). |
+| **Sign Search (WDL)** | Searches sign text and coordinates from the 2b2t.place world download (April–June 2026). Needs the separate **sign pack** (~40 MB), which members can get in our Discord. |
 
 ### 🛡️ Stasis & safety
 | Module | What it does for you |
