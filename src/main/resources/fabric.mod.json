@@ -1,0 +1,32 @@
+{
+	"schemaVersion": 1,
+	"id": "greencorps",
+	"version": "${version}",
+	"name": "GreenCorps X+",
+	"description": "GreenCorps Meteor Client addon for Minecraft 1.21.4 only — trial-chamber and utility modules.",
+	"authors": ["QOLARR"],
+	"license": "MIT",
+	"icon": "assets/greencorps/icon.png",
+	"environment": "client",
+	"mixins": ["greencorps.mixins.json"],
+	"entrypoints": {
+		"meteor": ["dev.greencorps.GreenCorps"]
+	},
+	"custom": {
+		"meteor-client:color": "100,230,210",
+		"modmenu": {
+			"parent": {
+				"id": "meteor-client"
+			}
+		}
+	},
+	"depends": {
+		"java": ">=21",
+		"minecraft": "1.21.4",
+		"meteor-client": "*"
+	},
+	"suggests": {
+		"xaerominimap": "*",
+		"xaeroworldmap": "*"
+	}
+}

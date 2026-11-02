@@ -1,0 +1,15 @@
+# Copy to local.properties (gitignored) and fill in YOUR paths.
+# Never commit local.properties — it points at your machine only.
+
+# Folder with Meteor + Xaero jars used for compile (modCompileOnly).
+# Expected Xaero filenames (see build.gradle):
+#   xaerominimap-fabric-1.21.4-26.1.4.jar
+#   xaeroworldmap-fabric-1.21.4-1.41.2.jar
+instance.mods=/path/to/your/minecraft/mods
+
+# Live instance mods/ folder where deploy-instance.sh installs greencorps-*.jar.
+# Can be the same as instance.mods.
+deploy.mods=/path/to/your/minecraft/mods
+
+# Optional second instance (maintainer dual play beds). Collaborators can omit.
+# deploy.mods.alt=/path/to/your/second/minecraft/mods
