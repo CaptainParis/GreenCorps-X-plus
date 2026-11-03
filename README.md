@@ -23,7 +23,7 @@
 1. Install [Fabric](https://fabricmc.net/use/) and [Meteor Client](https://meteorclient.com/) for your Minecraft version.
 2. Download the jar for your version from **[Releases](https://github.com/qolarr-dev/GreenCorps-X-plus/releases/latest)**:
    - `greencorps-<version>.jar` for **1.21.4** (all modules)
-   - `greencorps-<version>+1.21.11.jar` for **1.21.11** (finders, Stasis Monitor and Discord Pings so far)
+   - `greencorps-<version>+1.21.11.jar` for **1.21.11** (all modules)
 3. Put it in your `mods` folder next to Meteor, delete any older `greencorps-*.jar` and start the game.
 4. Open the Meteor GUI (**Right Shift**). Everything is in the **GreenCorps** category.
 
@@ -44,7 +44,8 @@ Optional: [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) and [World 
 |---|---|
 | **Stasis Monitor** | Tracks settled stasis pearls per home, with quotas, missing-pearl alerts, ESP (optionally seat-only) and a chamber overview. `.stasis` command. |
 | **Discord Pings** | Private pings to **your own** Discord webhook: low rockets, low elytra, heavy damage, totem pops and deaths. It never sends coordinates. |
-| **Safe Shulker** | Middle-click a shulker in your inventory to use it overhead; it's broken right back into your inventory. *(by fuxkingjosh)* |
+| **Safe Shulker** | Middle-click a shulker in your inventory (or while holding one) to use it overhead; it's broken right back into your inventory. *(by fuxkingjosh)* |
+| **Anti-Client** | Early preview: reads incoming mace dives and crystal bursts and shows a survive-or-leave verdict on its HUD element. It only watches and logs; it never acts on its own. |
 
 ### 🏠 Base
 | Module | What it does for you |
@@ -57,10 +58,12 @@ Optional: [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) and [World 
 | Module | What it does for you |
 |---|---|
 | **Map Duper+** | Copies maps and map bundles from a side panel in the inventory, crafting table and cartography table. Sorts mapart into reading order and stays under 2b2t's click limit. |
-| **Map Slot Preview** | Shows mapart right in inventory and container slots. |
-| **Tooltip+** | Better tooltips: shulker and ender chest previews (the ender chest is remembered between sessions), full bundle contents, books, banners, maps, item locations and item file size. |
+| **Map Slot Preview** | Shows mapart right in inventory and container slots, and loads the maps inside bundles on its own. |
+| **Item Frame Control** | Mapart walls without frames: filled frames lose their border, empty ones get a small ESP box, and clicks can pass through. |
+| **Tooltip+** | Better tooltips: shulker and ender chest previews (the ender chest is remembered between sessions), full bundle contents with a map preview beside them, books, banners, maps, item locations and item file size. |
 | **Book Filler** | Fills a book and quill from a template, with its own title and signer. |
-| **Gateway ESP** | End gateway ESP with direction vectors, tracers and optional Xaero pins. |
+| **Auto Loom** | Paste a banner `/give` command (Tooltip+ copies one from any banner) and a panel beside the loom walks you through every layer. |
+| **Gateways Esp** | End gateway ESP with direction vectors, tracers and optional Xaero pins. |
 
 HUD elements for Breezes, Outposts, Solid Pockets and Time Machine are under **GreenCorps** in the Meteor HUD editor.
 

@@ -27,12 +27,20 @@ public final class GcMapTooltipComponent implements TooltipComponent, MeteorTool
 
 	private final ItemStack stack;
 	private final MapRenderState mapRenderState = new MapRenderState();
+	/** Fixed size multiplier, or NaN to follow Tooltip+ map-scale. */
+	private final double fixedScale;
 
 	public GcMapTooltipComponent(ItemStack stack) {
+		this(stack, Double.NaN);
+	}
+
+	public GcMapTooltipComponent(ItemStack stack, double scale) {
 		this.stack = stack.copy();
+		this.fixedScale = scale;
 	}
 
 	private double scale() {
+		if (!Double.isNaN(fixedScale)) return fixedScale;
 		TooltipPlus tip = TooltipPlus.get();
 		return tip == null ? 1.0 : tip.mapTooltipScale();
 	}

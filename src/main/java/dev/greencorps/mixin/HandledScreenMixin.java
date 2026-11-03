@@ -194,6 +194,12 @@ public abstract class HandledScreenMixin {
 	 */
 	@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true, require = 0)
 	private void greencorps$onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+		MapSlotPreview preview = MapSlotPreview.get();
+		if (preview != null && preview.onUserScreenClick()) {
+			greencorps$swallowButton = button;
+			cir.setReturnValue(true);
+			return;
+		}
 		if (greencorps$wing != null && greencorps$wingVisible
 			&& (greencorps$wing.mouseClicked(mouseX, mouseY, button) || greencorps$wing.interceptScreenClick(mouseX, mouseY, button))) {
 			greencorps$swallowButton = button;

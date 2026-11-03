@@ -1,22 +1,22 @@
 package dev.greencorps.util;
 
-import meteordevelopment.meteorclient.settings.Setting;
-import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 
 /**
- * Meteor builds titles from kebab names ({@code esp} -&gt; {@code Esp}).
- * Rewrite display titles so ESP stays all caps. Setting and module name keys are unchanged.
+ * Module titles Meteor cannot derive from the name ({@code gateway-esp} would show as "Gateway Esp").
+ * Only the display title changes; the name, and with it the saved settings, stay the same.
  *
- * <p>Only touches {@link Module#title} / {@link Setting#title} on those exact classes —
- * never subclass fields named {@code title} (e.g. Book Filler's title Setting).
+ * <p>Only touches {@link Module#title} on that exact class, never subclass fields named {@code title}
+ * (e.g. Book Filler's title Setting).
  */
 public final class EspTitles {
 	private static final Unsafe UNSAFE = unsafe();
+	private static final Map<String, String> TITLES = Map.of("gateway-esp", "Gateways Esp");
 
 	private EspTitles() {
 	}
@@ -27,18 +27,14 @@ public final class EspTitles {
 		for (Module module : modules.getAll()) {
 			if (module == null || module.category == null) continue;
 			if (!"GreenCorps".equals(module.category.name)) continue;
-			rewriteStringTitle(Module.class, module, espTitle(module.title));
-			for (SettingGroup group : module.settings.groups) {
-				for (Setting<?> setting : group) {
-					rewriteStringTitle(Setting.class, setting, espTitle(setting.title));
-				}
-			}
+			String title = titleFor(module.name);
+			if (title != null) rewriteStringTitle(Module.class, module, title);
 		}
 	}
 
-	static String espTitle(String title) {
-		if (title == null || title.isEmpty()) return title;
-		return title.replace("Esp", "ESP");
+	/** Display title for a GreenCorps module name, or null to keep Meteor's. */
+	static String titleFor(String name) {
+		return name == null ? null : TITLES.get(name);
 	}
 
 	private static void rewriteStringTitle(Class<?> owner, Object target, String value) {

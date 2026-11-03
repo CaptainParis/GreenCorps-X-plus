@@ -1,5 +1,8 @@
 package dev.greencorps;
 
+import net.minecraft.client.gui.screen.ingame.LoomScreen;
+import dev.greencorps.gui.AutoLoomWing;
+import dev.greencorps.modules.AutoLoom;
 import com.mojang.logging.LogUtils;
 import dev.greencorps.commands.HomeCommand;
 import dev.greencorps.commands.StasisCommand;
@@ -7,11 +10,14 @@ import dev.greencorps.gui.GcWings;
 import dev.greencorps.gui.GreenCorpsTitleTag;
 import dev.greencorps.gui.MapDuperWing;
 import dev.greencorps.gui.ShulkerSortWing;
+import dev.greencorps.hud.AntiClientHud;
 import dev.greencorps.hud.BaseBackupHud;
 import dev.greencorps.hud.BreezesHud;
 import dev.greencorps.hud.OutpostsHud;
 import dev.greencorps.hud.SolidPocketHud;
 import dev.greencorps.mapdupe.LiveInventory;
+import dev.greencorps.commands.AntiClientCommand;
+import dev.greencorps.modules.AntiClient;
 import dev.greencorps.modules.BaseBackup;
 import dev.greencorps.modules.BookFiller;
 import dev.greencorps.modules.BreezeFinder;
@@ -21,6 +27,7 @@ import dev.greencorps.util.EnderChestCache;
 import dev.greencorps.util.ShulkerScreenTint;
 import dev.greencorps.modules.EndFloor;
 import dev.greencorps.modules.GatewayESP;
+import dev.greencorps.modules.ItemFrameControl;
 import dev.greencorps.modules.MapDuperPlus;
 import dev.greencorps.modules.MapSlotPreview;
 import dev.greencorps.modules.TooltipPlus;
@@ -62,6 +69,13 @@ public class GreenCorps extends MeteorAddon {
 		Modules.get().add(new BreezeFinder());
 		Modules.get().add(new OutpostFinder());
 		Modules.get().add(new SolidPocketFinder());
+		Modules.get().add(new AutoLoom());
+		GcWings.register(screen -> {
+			AutoLoom mod = AutoLoom.get();
+			if (mod == null || !mod.showWing()) return null;
+			if (!(screen instanceof LoomScreen)) return null;
+			return new AutoLoomWing(screen);
+		});
 		// Hook for modules outside the public build (empty here).
 		if (!BuildFlags.SHAREABLE) {
 			PrivateModules.register();
@@ -71,12 +85,14 @@ public class GreenCorps extends MeteorAddon {
 		Modules.get().add(new EndFloor());
 		Modules.get().add(new TooltipPlus());
 		Modules.get().add(new GatewayESP());
+		Modules.get().add(new ItemFrameControl());
 		Modules.get().add(new BaseBackup());
 		Modules.get().add(new StasisChambers());
 		Modules.get().add(new SignSearch());
 		Modules.get().add(new TimedCommands());
 		Modules.get().add(new DiscordPings());
 		Modules.get().add(new SafeShulker());
+		Modules.get().add(new AntiClient());
 		Modules.get().add(new MapDuperPlus());
 		GcWings.register(screen -> {
 			MapDuperPlus mod = MapDuperPlus.get();
@@ -106,7 +122,9 @@ public class GreenCorps extends MeteorAddon {
 		Hud.get().register(OutpostsHud.INFO);
 		Hud.get().register(SolidPocketHud.INFO);
 		Hud.get().register(BaseBackupHud.INFO);
+		Hud.get().register(AntiClientHud.INFO);
 		Commands.add(new HomeCommand());
+		Commands.add(new AntiClientCommand());
 		Commands.add(new StasisCommand());
 		GreenCorpsTitleTag.register();
 

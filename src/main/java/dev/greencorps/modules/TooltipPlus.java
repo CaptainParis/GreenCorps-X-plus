@@ -50,6 +50,7 @@ import net.minecraft.item.ShieldItem;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.RawFilteredPair;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
@@ -67,6 +68,22 @@ import java.util.Map;
  * GreenCorps tooltip suite: bundle, storage, book, banner, map, location, file size.
  */
 public class TooltipPlus extends Module {
+	public enum BundleMapMode {
+		LOCKED("Locked only"),
+		BOTH("Locked and hover");
+
+		private final String label;
+
+		BundleMapMode(String label) {
+			this.label = label;
+		}
+
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
 	public enum StorageStyle {
 		Preview("Preview"),
 		List("List");
@@ -110,6 +127,32 @@ public class TooltipPlus extends Module {
 		.description("Press over a bundle to pin its tooltip; click a cell to take that stack. Press again or Esc to unpin.")
 		.defaultValue(Keybind.fromKey(GLFW.GLFW_KEY_LEFT_ALT))
 		.visible(bundlePreview::get)
+		.build()
+	);
+
+	private final Setting<Boolean> bundleMapPreview = sgBundle.add(new BoolSetting.Builder()
+		.name("bundle-map-preview")
+		.description("Show the preview of a map in a bundle next to the bundle tooltip.")
+		.defaultValue(true)
+		.visible(bundlePreview::get)
+		.build()
+	);
+
+	private final Setting<BundleMapMode> bundleMapMode = sgBundle.add(new EnumSetting.Builder<BundleMapMode>()
+		.name("bundle-map-preview-mode")
+		.description("Locked only: for the hovered cell of a pinned bundle. Locked and hover: also for the selected stack while you hover a bundle.")
+		.defaultValue(BundleMapMode.BOTH)
+		.visible(() -> bundlePreview.get() && bundleMapPreview.get())
+		.build()
+	);
+
+	private final Setting<Double> bundleMapScale = sgBundle.add(new DoubleSetting.Builder()
+		.name("bundle-map-scale")
+		.description("Size of the map preview next to a bundle.")
+		.defaultValue(0.75)
+		.min(0.25)
+		.sliderRange(0.25, 2.0)
+		.visible(() -> bundlePreview.get() && bundleMapPreview.get())
 		.build()
 	);
 
@@ -271,7 +314,7 @@ public class TooltipPlus extends Module {
 
 	private final Setting<Boolean> bannerCopyCommand = sgBanner.add(new BoolSetting.Builder()
 		.name("copy-command")
-		.description("Press the bundle-lock key (Left Alt) over a banner or shield to copy its /give command, ready to paste.")
+		.description("Press the bundle-lock key (Left Alt) over a banner or shield to copy its /give command, ready to paste into Auto Loom.")
 		.defaultValue(true)
 		.visible(bannerPreview::get)
 		.build()
@@ -427,15 +470,75 @@ public class TooltipPlus extends Module {
 			return;
 		}
 		GcBundleTooltipComponent tip = bundleTip(bundle);
+		tip.setPinned(true);
 		tip.setHoveredIndex(pinnedTip == null ? -1 : pinnedTip.cellAt(mouseX, mouseY));
 		pinnedTip = tip;
-		int w = tip.getWidth(mc.textRenderer);
+		// Drawn like the hover tooltip: the same title lines above the grid, at the spot it was pinned from.
+		List<Text> title = Screen.getTooltipFromItem(mc, bundle);
+		int titleH = titleHeight(title);
+		int w = Math.max(tip.getWidth(mc.textRenderer), titleWidth(title));
 		int h = tip.getHeight(mc.textRenderer);
+		int top = pinnedY - titleH;
 		MatrixStack matrices = context.getMatrices();
 		matrices.push();
-		TooltipBackgroundRenderer.render(context, pinnedX, pinnedY, w, h, 400, bundle.get(DataComponentTypes.TOOLTIP_STYLE));
+		TooltipBackgroundRenderer.render(context, pinnedX, top, w, titleH + h, 400, bundle.get(DataComponentTypes.TOOLTIP_STYLE));
 		matrices.translate(0f, 0f, 400f);
+		drawTitle(context, title, pinnedX, top);
 		tip.drawItems(mc.textRenderer, pinnedX, pinnedY, w, h, context);
+		matrices.pop();
+		if (bundleMapPreview.get()) drawMapBeside(context, tip.stack(tip.focusedIndex()), pinnedX, top, w, titleH + h, 400);
+	}
+
+	/** Called from the hover bundle tooltip: the selected stack's map preview at its top corner (mode Locked and hover). */
+	public void drawHoverBundleMap(DrawContext context, GcBundleTooltipComponent tip, int x, int y, int width, int height) {
+		if (!isActive() || !bundlePreview.get() || !bundleMapPreview.get() || bundleMapMode.get() != BundleMapMode.BOTH) return;
+		int titleH = titleHeight(Screen.getTooltipFromItem(mc, tip.bundle()));
+		drawMapBeside(context, tip.stack(tip.focusedIndex()), x, y - titleH, width, titleH + height, 0);
+	}
+
+	/** Space between the bundle tooltip and the map preview: their borders touch at the corner. */
+	private static final int GROUP_GAP = 9;
+	/** Vanilla tooltip text lines: 10 px each, 2 px more under the first one. */
+	private static final int TITLE_LINE_H = 10;
+
+	private static int titleHeight(List<Text> lines) {
+		return lines.isEmpty() ? 0 : lines.size() * TITLE_LINE_H + 2;
+	}
+
+	private int titleWidth(List<Text> lines) {
+		int w = 0;
+		for (Text line : lines) w = Math.max(w, mc.textRenderer.getWidth(line));
+		return w;
+	}
+
+	private void drawTitle(DrawContext context, List<Text> lines, int x, int y) {
+		for (int i = 0; i < lines.size(); i++) {
+			context.drawTextWithShadow(mc.textRenderer, lines.get(i), x, y + i * TITLE_LINE_H + (i > 0 ? 2 : 0), 0xFFFFFFFF);
+		}
+	}
+
+	/** {@code stack}'s map tooltip right of a tooltip at x/y (left of it when there's no room); z on top of the current. */
+	private void drawMapBeside(DrawContext context, ItemStack stack, int tipX, int tipY, int tipW, int tipH, int z) {
+		if (stack == null || !stack.isOf(Items.FILLED_MAP)) return;
+		GcMapTooltipComponent map = new GcMapTooltipComponent(stack, bundleMapScale.get());
+		int w = map.getWidth(mc.textRenderer);
+		int h = map.getHeight(mc.textRenderer);
+		// At the bundle tooltip's top-right corner, else its top-left, else under it on a narrow screen.
+		int screenW = context.getScaledWindowWidth();
+		int screenH = context.getScaledWindowHeight();
+		int x = tipX + tipW + GROUP_GAP;
+		int y = tipY;
+		if (x + w + 4 > screenW) x = tipX - w - GROUP_GAP;
+		if (x < 4) {
+			x = Math.max(4, Math.min(tipX, screenW - w - 4));
+			y = tipY + tipH + GROUP_GAP;
+		}
+		y = Math.max(4, Math.min(y, screenH - h - 4));
+		MatrixStack matrices = context.getMatrices();
+		matrices.push();
+		TooltipBackgroundRenderer.render(context, x, y, w, h, z, null);
+		matrices.translate(0f, 0f, z);
+		map.drawItems(mc.textRenderer, x, y, w, h, context);
 		matrices.pop();
 	}
 
@@ -652,7 +755,7 @@ public class TooltipPlus extends Module {
 		}
 	}
 
-	/** Lock key over a banner: copy its /give command once per hover. */
+	/** Lock key over a banner: copy its /give command once per hover (Auto Loom parses it). */
 	private void appendBannerCopy(ItemStackTooltipEvent event, ItemStack stack) {
 		String command = BannerGiveCommand.of(stack);
 		if (command == null) return;

@@ -18,6 +18,9 @@ public final class ShulkerScreenTint {
 	private static int ticks;
 	private static int clickTick = Integer.MIN_VALUE / 2;
 	private static DyeColor clickedDye;
+	/** Set right before a screen for a shulker item (Safe Shulker's preview) is built; wins over a block click. */
+	private static boolean itemExpected;
+	private static DyeColor itemDye;
 
 	private ShulkerScreenTint() {}
 
@@ -32,13 +35,23 @@ public final class ShulkerScreenTint {
 		});
 	}
 
-	/** Tint for a shulker screen opening now (0 = vanilla), consuming the remembered click. */
+	/** The next shulker screen shows a shulker item rather than a placed box: tint it with that box's dye (null = undyed). */
+	public static void expectItem(DyeColor dye) {
+		itemExpected = true;
+		itemDye = dye;
+	}
+
+	/** Tint for a shulker screen opening now (0 = vanilla), consuming the remembered item or click. */
 	public static int forOpeningScreen() {
-		boolean recent = ticks - clickTick <= CLICK_WINDOW_TICKS;
+		boolean item = itemExpected;
+		DyeColor dye = item ? itemDye : clickedDye;
+		boolean recent = item || ticks - clickTick <= CLICK_WINDOW_TICKS;
+		itemExpected = false;
+		itemDye = null;
 		clickTick = Integer.MIN_VALUE / 2;
 		TooltipPlus tip = TooltipPlus.get();
 		if (!recent || tip == null) return 0;
-		return tip.shulkerScreenTint(clickedDye);
+		return tip.shulkerScreenTint(dye);
 	}
 
 	/** Label colour readable on the tinted body: vanilla dark grey, or white on dark dyes. */

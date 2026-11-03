@@ -4,12 +4,15 @@ import dev.greencorps.gui.wing.WingButton;
 import dev.greencorps.gui.wing.WingDraw;
 import dev.greencorps.mapdupe.CopyRunner;
 import dev.greencorps.mapdupe.InvSim;
+import dev.greencorps.mixin.HandledScreenAccessor;
 import dev.greencorps.modules.MapDuperPlus;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.ShulkerBoxScreen;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
@@ -17,13 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Map Duper+ Sort button for an open shulker box: a small panel left of the box, top-aligned with it. Sorts the
- * maps inside the box (Sort Maps' names-then-edges layout); while it runs, a line under the panel shows progress
- * and Stop, afterwards the status.
+ * Map Duper+ panel for an open shulker box: a small panel left of the box, top-aligned with it. Sort Maps sorts the
+ * maps inside the box (Sort Maps' names-then-edges layout); Bundle Sort, as in the inventory panel, sorts the next
+ * bundle you click, in the box or in your inventory. While a job runs, a line under the panel shows progress and
+ * Stop, afterwards the status.
  */
 public class ShulkerSortWing extends GcScreenWing {
 	private static final int PANEL_W = 92;
-	private static final int PANEL_H = 26;
+	private static final int PANEL_H = 46;
 	private static final int INFO_H = 16;
 
 	private final HandledScreen<?> screen;
@@ -72,6 +76,8 @@ public class ShulkerSortWing extends GcScreenWing {
 		buttons.clear();
 		buttons.add(new WingButton(left + 4, top + 4, PANEL_W - 8, 18, "Sort Maps" + (maps > 1 ? " (" + maps + ")" : ""),
 			reason == null, false, reason, () -> mod.startSort(screen)).withHint("Lay the maps in this box out by artwork"));
+		buttons.add(new WingButton(left + 4, top + 24, PANEL_W - 8, 18, "Bundle Sort", !running, mod.bundleSort(),
+			running ? "A job is running" : null, mod::toggleBundleSort).withHint("Click a bundle to sort its contents"));
 		drawInfo(context, tr, mod, mouseX, mouseY);
 		for (WingButton b : buttons) b.draw(context, mouseX, mouseY);
 		for (WingButton b : buttons) b.drawReason(context, mouseX, mouseY);
@@ -121,7 +127,13 @@ public class ShulkerSortWing extends GcScreenWing {
 	@Override
 	public boolean interceptScreenClick(double mouseX, double mouseY, int button) {
 		MapDuperPlus mod = MapDuperPlus.get();
-		return mod != null && mod.isRunning(); // your clicks would desync the sort
+		if (mod == null) return false;
+		if (mod.isRunning()) return true; // your clicks would desync the sort
+		if (!mod.bundleSort()) return false;
+		Slot slot = ((HandledScreenAccessor) screen).greencorps$getFocusedSlot();
+		if (button == 0 && !Screen.hasShiftDown() && slot != null && mod.startBundleSort(screen, slot.id)) return true;
+		mod.endBundleSort(); // anything but a bundle ends the mode; the click goes through as usual
+		return false;
 	}
 
 	@Override

@@ -12,7 +12,7 @@ import java.util.Optional;
 
 /**
  * /give command (1.21 component syntax) for a banner or shield's design, in the format
- * that pastes straight back into chat. Shields give the
+ * {@link BannerCommandParser} reads, so it can be pasted straight into Auto Loom. Shields give the
  * banner of their base colour.
  */
 public final class BannerGiveCommand {

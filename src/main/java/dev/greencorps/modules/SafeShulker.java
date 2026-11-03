@@ -1,21 +1,28 @@
 package dev.greencorps.modules;
 
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
+import meteordevelopment.meteorclient.events.meteor.MouseButtonEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import dev.greencorps.GreenCorps;
 import dev.greencorps.gui.SafeShulkerScreen;
+import dev.greencorps.mixin.HandledScreenAccessor;
 import dev.greencorps.util.ClickBudget;
+import dev.greencorps.util.ShulkerScreenTint;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.render.BetterTooltips;
 import meteordevelopment.meteorclient.utils.misc.Keybind;
+import meteordevelopment.meteorclient.utils.misc.input.KeyAction;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.orbit.EventPriority;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShulkerBoxBlock;
+import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.ContainerComponent;
 import net.minecraft.entity.player.PlayerInventory;
@@ -73,7 +80,7 @@ public class SafeShulker extends Module {
 
 	private final Setting<Boolean> middleClick = sgGeneral.add(new BoolSetting.Builder()
 		.name("middle-click")
-		.description("Middle-click a shulker in any inventory screen to open it.")
+		.description("Middle-click a shulker in any inventory screen to open it, or middle-click while holding one.")
 		.defaultValue(true)
 		.build()
 	);
@@ -243,6 +250,31 @@ public class SafeShulker extends Module {
 		return openGhost(slot);
 	}
 
+	/**
+	 * Middle-click reaches Meteor's mouse event before the screen, and Inventory Tweaks sorts on middle-click by
+	 * default (and cancels the click), so the screen hook never saw it. Open from here first. With no screen open,
+	 * middle-click opens the shulker you are holding (instead of picking a block).
+	 */
+	@EventHandler(priority = EventPriority.HIGHEST)
+	private void onMouseButton(MouseButtonEvent event) {
+		if (event.action != KeyAction.Press) return;
+		if (mc.currentScreen == null) {
+			if (tryOpenHeld(event.button)) event.cancel();
+			return;
+		}
+		if (!(mc.currentScreen instanceof HandledScreen<?> screen)) return;
+		if (screen instanceof SafeShulkerScreen || screen instanceof CreativeInventoryScreen) return;
+		Slot slot = ((HandledScreenAccessor) screen).greencorps$getFocusedSlot();
+		if (tryOpenFromMouse(slot, event.button)) event.cancel();
+	}
+
+	/** Middle-click in the world while the selected hotbar slot holds a shulker. */
+	private boolean tryOpenHeld(int button) {
+		if (!canStart() || !middleClick.get() || button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) return false;
+		int selected = mc.player.getInventory().selectedSlot;
+		return isShulker(mc.player.getInventory().getStack(selected)) && openAt(selected);
+	}
+
 	public boolean tryOpenFromKey(Slot slot, int keyCode, int modifiers) {
 		if (!canStart()) return false;
 		Keybind bind = openBind.get();
@@ -256,11 +288,14 @@ public class SafeShulker extends Module {
 
 	private boolean openGhost(Slot slot) {
 		if (slot == null || !(slot.inventory instanceof PlayerInventory)) return false;
+		return openAt(slot.getIndex());
+	}
 
-		int invIndex = slot.getIndex();
+	/** Opens the shulker at player inventory index {@code invIndex} (main inventory or hotbar). */
+	private boolean openAt(int invIndex) {
 		if (invIndex < 0 || invIndex > 35) return false; // main inventory + hotbar only
 
-		ItemStack stack = slot.getStack();
+		ItemStack stack = mc.player.getInventory().getStack(invIndex);
 		if (!isShulker(stack)) return false;
 		if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) return false;
 
@@ -288,6 +323,8 @@ public class SafeShulker extends Module {
 
 		ghostMenu = new ShulkerBoxScreenHandler(0, ghostPlayer, ghostInv);
 		stage = Stage.GHOST;
+		// Same dye tint and labels as a placed box when Tooltip+ colours shulker screens.
+		ShulkerScreenTint.expectItem(((ShulkerBoxBlock) ((BlockItem) stack.getItem()).getBlock()).getColor());
 		mc.setScreen(new SafeShulkerScreen(this, ghostMenu, ghostPlayer, stack.getName()));
 		return true;
 	}

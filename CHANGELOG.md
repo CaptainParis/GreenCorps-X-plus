@@ -2,6 +2,31 @@
 
 Player-facing notes for each GreenCorps X+ release. Downloads: [Releases](https://github.com/qolarr-dev/GreenCorps-X-plus/releases).
 
+## 0.6.1: everything on 1.21.11, mapart walls without frames
+
+**1.21.11 gets every module.** Tooltip+, Map Slot Preview, Map Duper+, Safe Shulker, Time Machine, Sign Search, Timed Commands, Gateways Esp, End Floor and Book Filler now run on 1.21.11 too. On 1.21.11 the End Floor and Time Machine walls are flat fills instead of the animated forcefield.
+
+**New modules**
+- **Item Frame Control**: filled frames lose their border (the map or item stays), empty frames get a small ESP box as an anchor; optional click-through (sneak to edit) and no-render for mapart or items.
+- **Auto Loom**: paste a banner `/give` command (Tooltip+ copies one from any banner with Left Alt) and a panel beside the loom walks you through every layer.
+- **Anti-Client** (early preview): reads incoming mace dives and crystal bursts and shows a survive-or-leave verdict. It only watches and logs for now.
+
+**Bundles and maps**
+- Maps inside a bundle in your inventory load on their own through a free hotbar slot, in order, under 2b2t's click limit.
+- A map preview appears next to bundle tooltips (scroll, or pin with Left Alt and hover); size in Tooltip+ → *bundle-map-scale*.
+- The selected bundle stack is clearly marked and named inside the tooltip; a pinned bundle looks like the hover one.
+- An open shulker gets a **Bundle Sort** button.
+
+**Safe Shulker**
+- The preview is tinted in the shulker's colour.
+- Middle-click works even when Meteor's Inventory Tweaks sorts on middle-click, and middle-clicking while holding a shulker opens it.
+- Inventory Essentials' bulk moves work in the preview instead of crashing the game.
+
+**Fixes**
+- Book previews in Tooltip+ show the page again.
+- The End gateway module is called **Gateways Esp** again; your settings are kept.
+- Stasis Monitor switches itself back on after joining on 1.21.11, as on 1.21.4.
+
 ## 0.6.0: first public release
 
 Where X+ stands today: 15 modules in the **GreenCorps** category of the Meteor GUI, for Minecraft **1.21.4** (all modules) and **1.21.11** (finders, Stasis Monitor and Discord Pings so far).

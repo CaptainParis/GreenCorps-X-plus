@@ -25,7 +25,10 @@
 		"MixinShulkerBoxScreenGc",
 		"MixinGenericContainerScreenGc",
 		"MixinClientPlayerInteractionManagerGc",
-		"MixinBundleItemTooltipGc"
+		"MixinBundleItemTooltipGc",
+		"MixinEntityRendererGc",
+		"MixinItemFrameEntityRendererGc",
+		"MixinGameRendererCrosshairGc"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -31,6 +31,18 @@ public class SafeShulkerScreen extends ShulkerBoxScreen {
 		module.recordClick(slotId, button, actionType);
 	}
 
+	/**
+	 * Another mod clicked this screen through the interaction manager (Inventory Essentials' bulk transfer, mouse
+	 * tweaks…). Its container id is the inventory's, so the click would land on the real inventory, whose slot list
+	 * is shorter (a crash for slot ids past it). Simulate it here like our own clicks.
+	 */
+	public void routeExternalClick(int slotId, int button, SlotActionType actionType) {
+		if (client == null || client.player == null) return;
+		if (slotId != -999 && (slotId < 0 || slotId >= handler.slots.size())) return;
+		handler.onSlotClick(slotId, button, actionType, client.player);
+		module.recordClick(slotId, button, actionType);
+	}
+
 	@Override
 	public void removed() {
 		super.removed();

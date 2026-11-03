@@ -240,7 +240,7 @@ public class MapDuperPlus extends Module {
 	 * @return true when the slot held a bundle with something in it
 	 */
 	public boolean startBundleSort(HandledScreen<?> screen, int slotId) {
-		InvSim sim = snapshot(screen);
+		InvSim sim = snapshotForSort(screen);
 		if (sim == null || mc.world == null || slotId < 0 || slotId >= sim.station.slotCount) return false;
 		SimStack s = sim.slot(slotId);
 		if (s.kind != SimStack.Kind.BUNDLE || s.contents.isEmpty()) return false;

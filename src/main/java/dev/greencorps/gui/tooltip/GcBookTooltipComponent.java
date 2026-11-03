@@ -13,6 +13,12 @@ import net.minecraft.util.Identifier;
 /** Compact open-book page preview; page changed externally via scroll. */
 public final class GcBookTooltipComponent implements TooltipComponent, MeteorTooltipData {
 	private static final Identifier BOOK = Identifier.of("textures/gui/book.png");
+	private static final int WIDTH = 90;
+	private static final int HEIGHT = 100;
+	private static final int PAGE_U = 20;
+	private static final int PAGE_V = 1;
+	private static final int PAGE_W = 146;
+	private static final int PAGE_H = 180;
 
 	private final Text page;
 	private final int pageIndex;
@@ -31,19 +37,20 @@ public final class GcBookTooltipComponent implements TooltipComponent, MeteorToo
 
 	@Override
 	public int getHeight(TextRenderer textRenderer) {
-		return 100;
+		return HEIGHT;
 	}
 
 	@Override
 	public int getWidth(TextRenderer textRenderer) {
-		return 90;
+		return WIDTH;
 	}
 
 	@Override
 	public void drawItems(TextRenderer textRenderer, int x, int y, int width, int height, DrawContext context) {
-		context.drawTexture(RenderLayer::getGuiTextured, BOOK, x, y, 0, 12, 0, 90, 90, 179, 179);
+		// The page of book.png (256×256): parchment at u 20-166, v 1-181, scaled into the 90×100 box.
+		context.drawTexture(RenderLayer::getGuiTextured, BOOK, x, y, PAGE_U, PAGE_V, WIDTH, HEIGHT, PAGE_W, PAGE_H, 256, 256);
 		String ind = (pageIndex + 1) + "/" + pageCount;
-		context.drawText(textRenderer, ind, x + 90 - textRenderer.getWidth(ind) - 4, y + 90 - 10, 0xFF000000, false);
+		context.drawText(textRenderer, ind, x + WIDTH - textRenderer.getWidth(ind) - 6, y + HEIGHT - 14, 0xFF000000, false);
 
 		MatrixStack matrices = context.getMatrices();
 		matrices.push();

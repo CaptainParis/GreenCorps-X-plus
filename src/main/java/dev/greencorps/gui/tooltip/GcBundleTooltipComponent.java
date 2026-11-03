@@ -1,5 +1,6 @@
 package dev.greencorps.gui.tooltip;
 
+import dev.greencorps.modules.TooltipPlus;
 import meteordevelopment.meteorclient.utils.tooltip.MeteorTooltipData;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -8,6 +9,9 @@ import net.minecraft.client.render.RenderLayer;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Language;
+import net.minecraft.text.OrderedText;
 import net.minecraft.util.Identifier;
 
 import java.util.List;
@@ -28,6 +32,10 @@ public final class GcBundleTooltipComponent implements TooltipComponent, MeteorT
 	private static final int BAR_FULL = 0xFFD54646;
 
 	public static final int SLOT = 24;
+	/** Vanilla's highlight sprites are faint: a light well and an outline mark the selected / hovered stack. */
+	private static final int MARK_FILL = 0x50FFFFFF;
+	private static final int MARK_SELECTED = 0xFFFFFFFF;
+	private static final int MARK_HOVERED = 0xFFFFD34D;
 	private static final int BAR_H = 13;
 
 	/** The component vanilla drew last; a pin freezes the tooltip at its origin. */
@@ -40,6 +48,9 @@ public final class GcBundleTooltipComponent implements TooltipComponent, MeteorT
 	private final int selectedIndex;
 	/** Cell under the mouse while the tooltip is pinned, or -1. */
 	private int hoveredIndex = -1;
+	/** Drawn as the pinned tooltip (which shows the hovered map itself) rather than the hover tooltip. */
+	private boolean pinned;
+	private static final int NAME_H = 12;
 	/** Screen-space origin of the last draw, for pinned hit tests. */
 	private int drawX;
 	private int drawY;
@@ -93,6 +104,24 @@ public final class GcBundleTooltipComponent implements TooltipComponent, MeteorT
 		hoveredIndex = index;
 	}
 
+	public int hoveredIndex() {
+		return hoveredIndex;
+	}
+
+	public int selectedIndex() {
+		return selectedIndex;
+	}
+
+	/** The stack the tooltip is about: the hovered cell of a pinned bundle, else the scroll selection; -1 if none. */
+	public int focusedIndex() {
+		int i = hoveredIndex >= 0 ? hoveredIndex : selectedIndex;
+		return i >= 0 && i < stacks.size() ? i : -1;
+	}
+
+	public void setPinned(boolean pinned) {
+		this.pinned = pinned;
+	}
+
 	@Override
 	public boolean isSticky() {
 		return true;
@@ -100,7 +129,15 @@ public final class GcBundleTooltipComponent implements TooltipComponent, MeteorT
 
 	@Override
 	public int getHeight(TextRenderer textRenderer) {
-		return rows() * SLOT + BAR_H + 8;
+		return nameRow() + rows() * SLOT + BAR_H + 8;
+	}
+
+	/**
+	 * Height of the name row at the top: the selected (or hovered) stack's name sits inside the tooltip instead of
+	 * floating over its title lines. Always there, so the pinned and the hover tooltip have the same layout.
+	 */
+	private int nameRow() {
+		return NAME_H;
 	}
 
 	@Override
@@ -118,12 +155,19 @@ public final class GcBundleTooltipComponent implements TooltipComponent, MeteorT
 		return -1;
 	}
 
+	private static void outline(DrawContext context, int x, int y, int size, int color) {
+		context.fill(x, y, x + size, y + 1, color);
+		context.fill(x, y + size - 1, x + size, y + size, color);
+		context.fill(x, y + 1, x + 1, y + size - 1, color);
+		context.fill(x + size - 1, y + 1, x + size, y + size - 1, color);
+	}
+
 	private int cellX(int x, int i) {
 		return x + BundleGrid.col(i, stacks.size()) * SLOT;
 	}
 
 	private int cellY(int y, int i) {
-		return y + BundleGrid.row(i, stacks.size()) * SLOT;
+		return y + nameRow() + BundleGrid.row(i, stacks.size()) * SLOT;
 	}
 
 	@Override
@@ -131,30 +175,35 @@ public final class GcBundleTooltipComponent implements TooltipComponent, MeteorT
 		drawX = x;
 		drawY = y;
 		lastDrawn = this;
+		if (!pinned) {
+			TooltipPlus tip = TooltipPlus.get();
+			if (tip != null) tip.drawHoverBundleMap(context, this, x, y, width, height);
+		}
 		for (int i = 0; i < stacks.size(); i++) {
 			int sx = cellX(x, i);
 			int sy = cellY(y, i);
 			boolean highlight = i == selectedIndex || i == hoveredIndex;
 			context.drawGuiTexture(RenderLayer::getGuiTextured, highlight ? SLOT_HIGHLIGHT_BACK : SLOT_BACKGROUND, sx, sy, SLOT, SLOT);
+			if (highlight) context.fill(sx + 2, sy + 2, sx + SLOT - 2, sy + SLOT - 2, MARK_FILL);
 			ItemStack stack = stacks.get(i);
 			context.drawItem(stack, sx + 4, sy + 4, i);
 			context.drawStackOverlay(textRenderer, stack, sx + 4, sy + 4);
 			if (highlight) {
 				context.drawGuiTexture(RenderLayer::getGuiTexturedOverlay, SLOT_HIGHLIGHT_FRONT, sx, sy, SLOT, SLOT);
+				// Hovered (pinned bundle) in amber when it is not the selected stack, so both stay readable.
+				outline(context, sx + 1, sy + 1, SLOT - 2, i == selectedIndex ? MARK_SELECTED : MARK_HOVERED);
 			}
 		}
 
-		int named = hoveredIndex >= 0 ? hoveredIndex : selectedIndex;
-		if (named >= 0 && named < stacks.size()) {
-			ItemStack stack = stacks.get(named);
-			Text name = stack.getFormattedName();
-			int nameX = x + width / 2;
-			context.drawTooltip(textRenderer, name, nameX - textRenderer.getWidth(name) / 2, y - 15,
-				stack.get(DataComponentTypes.TOOLTIP_STYLE));
-		}
+		// Pinned: the cell under the cursor first, then the scroll selection.
+		int named = focusedIndex();
+		Text name = named >= 0 ? stacks.get(named).getFormattedName()
+			: Text.literal(pinned ? "Hover a stack" : "Scroll to pick a stack").formatted(Formatting.DARK_GRAY);
+		OrderedText line = Language.getInstance().reorder(textRenderer.trimToWidth(name, width));
+		context.drawTextWithShadow(textRenderer, line, x + (width - textRenderer.getWidth(line)) / 2, y + 1, 0xFFFFFFFF);
 
 		// Full-width bar under the grid.
-		int barY = y + rows() * SLOT + 4;
+		int barY = y + nameRow() + rows() * SLOT + 4;
 		boolean full = occupancy >= 1f;
 		int inner = width - 2;
 		int fill = Math.max(0, Math.min(inner, Math.round(occupancy * inner)));
